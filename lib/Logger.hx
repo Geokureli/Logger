@@ -102,7 +102,7 @@ private class LoggerRaw
     public function new(id, priority = WARN, throwPriority = ERROR)
     {
         this.id = id;
-        this.prefix = id == null || id == "" ? "" : '$id: ';
+        this.prefix = id == null || id == "" ? "" : '$id - ';
         logLevels = LogLevelList.fromCompilerFlag("log", id, LogLevelList.fromPriority(priority));
         throwLevels = LogLevelList.fromCompilerFlag("throw", id, LogLevelList.fromPriority(throwPriority));
         error = new LoggerLevel(this, ERROR);
@@ -212,7 +212,7 @@ private class LoggerLevelRaw
     {
         this.parent = parent;
         this.level = level;
-        this.prefix = level.toString() + " > ";
+        this.prefix = '$level:';
     }
     
     public function destroy()
@@ -254,14 +254,19 @@ abstract LogLevelList(Array<LogLevel>) from Array<LogLevel>
             this.push(level);
     }
     
-    public function remove(level:LogLevel)
+    inline public function remove(level:LogLevel)
     {
-        return this.remove(level);
+        this.remove(level);
     }
     
     public function set(level:LogLevel, value:Bool)
     {
-        return this.remove(level);
+        if (value == false && has(level))
+            this.remove(level);
+        else if (value && has(level) == false)
+            this.push(level);
+        
+        return value;
     }
     
     static final arrReg = ~/^\[(.+)\]$/;

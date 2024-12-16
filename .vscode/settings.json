@@ -2,8 +2,8 @@
     [   [ "-cp", "test/src"
         , "-cp", "lib"
         , "-D", "analyzer-optimize"
-        , "-D", "special.log=[info,ERROR]"
-        , "-D", "special.throw=[VERBOSE]"
+        // , "-D", "special.log=[info,ERROR]"
+        // , "-D", "special.throw=[VERBOSE]"
         , "-main", "Main"
         , "--interp"
         ]
