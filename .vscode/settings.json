@@ -1,0 +1,14 @@
+{   "haxe.configurations":
+    [   [ "-cp", "test/src"
+        , "-cp", "lib"
+        , "-D", "analyzer-optimize"
+        , "-D", "special.log=[info,ERROR]"
+        , "-D", "special.throw=[VERBOSE]"
+        , "-main", "Main"
+        , "--interp"
+        ]
+    ]
+    //, "haxe.displayServer": { // configuration for starting haxe completion server itself
+    //     "arguments": ["-v"], // arguments before --wait (-v is useful for debugging)
+    // }
+}
