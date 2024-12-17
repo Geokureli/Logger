@@ -47,7 +47,7 @@ abstract Logger(LoggerRaw)
      * individual logger with:
      * `myLogger.log = (msg, ?pos)->haxe.Log.trace('[${getTimestamp()}] $msg', pos);`
      */
-    dynamic static public function globalLog(msg:Any, ?pos:PosInfos)
+    dynamic static public function globalLog(msg:String, ?pos:PosInfos)
     {
         haxe.Log.trace(msg, pos);
     }
