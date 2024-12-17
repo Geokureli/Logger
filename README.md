@@ -8,7 +8,7 @@ Tool used to simplify the categorization of logs, and easily customize which typ
      
      Command Line:
      ``
-     haxelib git logger http://github.com/GeoKureli/Logger
+     haxelib git logger http://github.com/Geokureli/Logger
      ``
   2. Include crashdumper in your project.xml:  
      
