@@ -4,8 +4,8 @@
         , "-D", "analyzer-optimize"
         // , "-D", "special.log=[info,ERROR]"
         // , "-D", "special.throw=[VERBOSE]"
-        , "-D", "special.log=NONE"
-        , "-D", "special.throw=NONE"
+        // , "-D", "special.log=NONE"
+        // , "-D", "special.throw=NONE"
         , "-main", "Main"
         , "--interp"
         ]

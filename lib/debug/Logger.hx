@@ -38,7 +38,7 @@ abstract Logger(LoggerRaw)
     /**
      * The default logger, able to be referenced anywhere
      * 
-     * Tip: Use `import.Logger.log;` in a module to simplfy your calls
+     * Tip: Use `import.debug.Logger.log;` in a module to simplfy your calls
      */
     static public final log = new Logger(VERBOSE);
     
@@ -54,7 +54,14 @@ abstract Logger(LoggerRaw)
     
     dynamic static public function globalFormatter(id:String, priority:Priority, msg:Any, ?pos:PosInfos)
     {
-        return priority != NONE ? '$id[$priority]: $msg' : '$id: $msg';
+        return if (id != null && priority != NONE)
+            '$id[$priority]: $msg';
+            else if (priority != NONE)
+            '$priority: $msg';
+            else if (id != null)
+            '$id: $msg';
+            else
+            '$msg';
     }
     
     /**
@@ -88,7 +95,6 @@ private class LoggerRaw
     
     final logLevels:PriorityList;
     final throwLevels:PriorityList;
-    final prefix:String = "";
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
     public final error:LoggerPriority;
@@ -102,10 +108,9 @@ private class LoggerRaw
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
     public final verbose:LoggerPriority;
     
-    public function new(id, priority = WARN, throwPriority = ERROR)
+    public function new(?id, priority = WARN, throwPriority = ERROR)
     {
         this.id = id;
-        this.prefix = id == null || id == "" ? "" : '$id - ';
         logLevels = PriorityList.fromCompilerFlag("log", id, PriorityList.fromPriority(priority));
         throwLevels = PriorityList.fromCompilerFlag("throw", id, PriorityList.fromPriority(throwPriority));
         error = new LoggerPriority(this, ERROR);
@@ -177,7 +182,7 @@ private class LoggerRaw
     inline function logIf(level:Priority, msg:Any, ?pos)
     {
         if (throwEnabled(level))
-            throw '${prefix}$msg';
+            throw formatter(level, msg, pos);
         
         if (logEnabled(level))
             logFinal(level, msg, pos);
