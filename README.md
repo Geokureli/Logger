@@ -10,7 +10,7 @@ Tool used to simplify the categorization of logs, and easily customize which typ
      ``
      haxelib git logger http://github.com/Geokureli/Logger
      ``
-  2. Include crashdumper in your project.xml:  
+  2. Include Logger in your project.xml:  
      
      ``xml
      <haxelib name="logger"/>
