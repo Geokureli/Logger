@@ -2,8 +2,23 @@
 
 Tool used to simplify the categorization of logs, and easily customize which type of logs are displayed, and which throw exceptions.
 
+## Setup
+
+  1. Install Logger (coming soon to haxelib, just github for now).
+     
+     Command Line:
+     ``
+     haxelib git logger http://github.com/GeoKureli/Logger
+     ``
+  2. Include crashdumper in your project.xml:  
+     
+     ``xml
+     <haxelib name="logger"/>
+     ``
+
 ## Creating categories
 To create categories, simple instantiate multiple `Logger` instances, like so:
+
 
 ```haxe
 static public var combatLog = new Logger("Combat", WARN);
