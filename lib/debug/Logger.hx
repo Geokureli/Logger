@@ -1,4 +1,4 @@
-package;
+package debug;
 
 import haxe.PosInfos;
 
@@ -26,13 +26,11 @@ import haxe.PosInfos;
  * 
  * ## Enabling logs via compile flags
  * While the `Logger` constructor has `priority` and `throwPriority` args, these can be
- * overriden from compiler flags, by adding the flag `-D log=WARN` all log priorities less than
- * `WARN` (i.e.: `INFO` and `VERBOSE`) are disabled. You can also specify exactly which priorities
- * are enabled, for example, `-D log=[info,error]` will disable all priorities other than `INFO`
- * and `ERROR`. The `log` flag will also effect all categories, unless the category has it's own
- * log priorities set in compiler flags. For example, a logger with the id "Combat" can have its
- * log priorities set via `-D combat.log=error`. There is a similar `throw` flag to specify which
- * logs throw an exception
+ * overriden from compiler flags, for example: 
+ * - `-D log=WARN`: Set global log-priority to warnings and errors
+ * - `-D throw=ERROR`: Set global throw-priority to errors
+ * - `-D log=[info,error]`: Only log info and errors, not warnings and verbose
+ * - `-D combat.log=verbose`: Enable ALL logs with the id "Combat" (not case sensitive), overrides global log-priority
  */
 @:forward
 abstract Logger(LoggerRaw)
@@ -52,6 +50,11 @@ abstract Logger(LoggerRaw)
     dynamic static public function globalLog(msg:Any, ?pos:PosInfos)
     {
         haxe.Log.trace(msg, pos);
+    }
+    
+    dynamic static public function globalFormatter(id:String, priority:Priority, msg:Any, ?pos:PosInfos)
+    {
+        return priority != NONE ? '$id[$priority]: $msg' : '$id: $msg';
     }
     
     /**
@@ -75,7 +78,7 @@ abstract Logger(LoggerRaw)
     }
 }
 
-@:allow(Logger)
+@:allow(debug.Logger)
 private class LoggerRaw
 {
     /**
@@ -83,32 +86,32 @@ private class LoggerRaw
      */
     public final id:Null<String>;
     
-    final logLevels:LogLevelList;
-    final throwLevels:LogLevelList;
+    final logLevels:PriorityList;
+    final throwLevels:PriorityList;
     final prefix:String = "";
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
-    public final error:LoggerLevel;
+    public final error:LoggerPriority;
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
-    public final warn:LoggerLevel;
+    public final warn:LoggerPriority;
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
-    public final info:LoggerLevel;
+    public final info:LoggerPriority;
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
-    public final verbose:LoggerLevel;
+    public final verbose:LoggerPriority;
     
     public function new(id, priority = WARN, throwPriority = ERROR)
     {
         this.id = id;
         this.prefix = id == null || id == "" ? "" : '$id - ';
-        logLevels = LogLevelList.fromCompilerFlag("log", id, LogLevelList.fromPriority(priority));
-        throwLevels = LogLevelList.fromCompilerFlag("throw", id, LogLevelList.fromPriority(throwPriority));
-        error = new LoggerLevel(this, ERROR);
-        warn = new LoggerLevel(this, WARN);
-        info = new LoggerLevel(this, INFO);
-        verbose = new LoggerLevel(this, VERBOSE);
+        logLevels = PriorityList.fromCompilerFlag("log", id, PriorityList.fromPriority(priority));
+        throwLevels = PriorityList.fromCompilerFlag("throw", id, PriorityList.fromPriority(throwPriority));
+        error = new LoggerPriority(this, ERROR);
+        warn = new LoggerPriority(this, WARN);
+        info = new LoggerPriority(this, INFO);
+        verbose = new LoggerPriority(this, VERBOSE);
     }
     
     public function destroy()
@@ -119,15 +122,26 @@ private class LoggerRaw
         verbose.destroy();
     }
     
-    dynamic public function log(msg:Any, ?pos:PosInfos)
+    public function log(msg:Any, ?pos:PosInfos)
     {
-        Logger.globalLog('${prefix}$msg', pos);
+        if (logLevels.isEmpty() == false)
+            logFinal(NONE, msg, pos);
+    }
+    
+    function logFinal(priority:Priority, msg:Any, ?pos:PosInfos)
+    {
+        Logger.globalLog(formatter(priority, msg, pos), pos);
+    }
+    
+    dynamic public function formatter(priority:Priority, msg:Any, ?pos:PosInfos)
+    {
+        return Logger.globalFormatter(id, priority, msg, pos);
     }
     
     /**
      * Determines the lowest priority to be logged
      */
-    public function setPriority(value:LogLevel)
+    public function setPriority(value:Priority)
     {
         logLevels.setPriority(value);
     }
@@ -135,47 +149,47 @@ private class LoggerRaw
     /**
      * Determines the lowest priority that will throw exceptions
      */
-    public function setThrowPriority(value:LogLevel)
+    public function setThrowPriority(value:Priority)
     {
         throwLevels.setPriority(value);
     }
     
-    inline function logEnabled(level:LogLevel)
+    inline function logEnabled(level:Priority)
     {
         return logLevels.has(level);
     }
     
-    inline function setLogEnabled(level:LogLevel, value:Bool):Bool
+    inline function setLogEnabled(level:Priority, value:Bool):Bool
     {
         return logLevels.set(level, value);
     }
     
-    inline function throwEnabled(level:LogLevel)
+    inline function throwEnabled(level:Priority)
     {
         return throwLevels.has(level);
     }
     
-    inline function setThrowEnabled(level:LogLevel, value:Bool):Bool
+    inline function setThrowEnabled(level:Priority, value:Bool):Bool
     {
         return throwLevels.set(level, value);
     }
     
-    inline function logIf(level:LogLevel, msg:Any, ?pos)
+    inline function logIf(level:Priority, msg:Any, ?pos)
     {
         if (throwEnabled(level))
             throw '${prefix}$msg';
         
         if (logEnabled(level))
-            log(msg, pos);
+            logFinal(level, msg, pos);
     }
 }
 
 @:forward(enabled, throws)
-abstract LoggerLevel(LoggerLevelRaw)
+abstract LoggerPriority(LoggerPriorityRaw)
 {
     public function new(parent, level)
     {
-        this = new LoggerLevelRaw(parent, level);
+        this = new LoggerPriorityRaw(parent, level);
     }
     
     @:op(a())
@@ -184,19 +198,18 @@ abstract LoggerLevel(LoggerLevelRaw)
         this.log(msg, pos);
     }
     
-    @:allow(LoggerRaw)
+    @:allow(debug.LoggerRaw)
     inline function destroy()
     {
         this.destroy();
     }
 }
 
-@:allow(LoggerLevel)
-private class LoggerLevelRaw
+@:allow(debug.LoggerPriority)
+private class LoggerPriorityRaw
 {
     var parent:LoggerRaw;
-    final level:LogLevel;
-    final prefix:String;
+    final level:Priority;
     
     /** Whether this log level is enabled */
     public var enabled(get, set):Bool;
@@ -208,11 +221,10 @@ private class LoggerLevelRaw
     inline function get_throws() return parent.throwEnabled(level);
     inline function set_throws(value:Bool) return parent.setThrowEnabled(level, value);
     
-    public function new(parent:LoggerRaw, level:LogLevel)
+    public function new(parent:LoggerRaw, level:Priority)
     {
         this.parent = parent;
         this.level = level;
-        this.prefix = '$level:';
     }
     
     public function destroy()
@@ -222,44 +234,49 @@ private class LoggerLevelRaw
     
     function log(msg:Any, ?pos:PosInfos):Void
     {
-        parent.logIf(level, '${prefix}${msg}', pos);
+        parent.logIf(level, msg, pos);
     }
 }
 
-abstract LogLevelList(Array<LogLevel>) from Array<LogLevel>
+abstract PriorityList(Array<Priority>) from Array<Priority>
 {
-    inline public function new(levels:Array<LogLevel>)
+    inline public function new(levels:Array<Priority>)
     {
         this = levels;
     }
     
-    public function setPriority(priority:LogLevel)
+    public function setPriority(priority:Priority)
     {
         this.resize(0);
-        for (level in LogLevel.all)
+        for (level in Priority.allButNone)
         {
             if (priority.priority >= level.priority)
                 add(level);
         }
     }
     
-    inline public function has(level:LogLevel)
+    inline public function isEmpty()
+    {
+        return this.length == 0;
+    }
+    
+    inline public function has(level:Priority)
     {
         return this.contains(level);
     }
     
-    public function add(level:LogLevel)
+    public function add(level:Priority)
     {
         if (has(level) == false)
             this.push(level);
     }
     
-    inline public function remove(level:LogLevel)
+    inline public function remove(level:Priority)
     {
         this.remove(level);
     }
     
-    public function set(level:LogLevel, value:Bool)
+    public function set(level:Priority, value:Bool)
     {
         if (value == false && has(level))
             this.remove(level);
@@ -272,29 +289,32 @@ abstract LogLevelList(Array<LogLevel>) from Array<LogLevel>
     static final arrReg = ~/^\[(.+)\]$/;
     
     /**
-     * If `value` is `"0"`-`"4"` or matches the name of a `LogLevel`, all levels up to
+     * If `value` is `"0"`-`"4"` or matches the name of a `Priority`, all levels up to
      * that level are enabled. If `value` has commas or is wrapped in square brackets,
      * those listed levels are enabled
      */
-    static public function fromString(value:String):LogLevelList
+    static public function fromString(value:String):PriorityList
     {
         final isArray = arrReg.match(value);
         // remove square brackets
         if (isArray)
             value = arrReg.matched(1);
         
-        if (value.indexOf(",") != -1 || isArray)
-            return value.split(",").map(LogLevel.fromString);
+        if (value == "NONE")
+            return [];
         
-        return fromPriority(LogLevel.fromString(value));
+        if (value.indexOf(",") != -1 || isArray)
+            return value.split(",").map(Priority.fromString);
+        
+        return fromPriority(Priority.fromString(value));
     }
     
-    static public function fromPriority(level:LogLevel):LogLevelList
+    static public function fromPriority(level:Priority):PriorityList
     {
-        return LogLevel.all.filter((l) -> level.priority >= l.priority);
+        return Priority.allButNone.filter((l) -> level.priority >= l.priority);
     }
     
-    static public function fromGlobalCompilerFlag(backup:LogLevelList):LogLevelList
+    static public function fromGlobalCompilerFlag(backup:PriorityList):PriorityList
     {
         if (LoggerDefines.all.exists("log"))
             return fromString(LoggerDefines.all["log"]);
@@ -302,7 +322,7 @@ abstract LogLevelList(Array<LogLevel>) from Array<LogLevel>
         return backup;
     }
     
-    static public function fromCompilerFlag(type:String, id:Null<String>, backup:LogLevelList):LogLevelList
+    static public function fromCompilerFlag(type:String, id:Null<String>, backup:PriorityList):PriorityList
     {
         // Use global log level if there's no id
         if (id == null)
@@ -322,8 +342,8 @@ abstract LogLevelList(Array<LogLevel>) from Array<LogLevel>
 /**
  * The varying degrees of importance that a log can have, used to selectively cull logs
  */
-@:allow(LogLevelList)
-enum abstract LogLevel(Int)
+@:allow(debug.PriorityList)
+enum abstract Priority(Int)
 {
     var NONE = 0;
     var ERROR = 1;
@@ -344,6 +364,7 @@ enum abstract LogLevel(Int)
      * Contains every log priority
      */
     static public final all = [NONE, ERROR, WARN, INFO, VERBOSE];
+    static public final allButNone = [ERROR, WARN, INFO, VERBOSE];
     
     public function toString()
     {
@@ -357,7 +378,7 @@ enum abstract LogLevel(Int)
         }
     }
     
-    static public function fromString(value:String):LogLevel
+    static public function fromString(value:String):Priority
     {
         return switch (value.toUpperCase())
         {

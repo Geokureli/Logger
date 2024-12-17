@@ -1,6 +1,6 @@
 class Main
 {
-    static public var log = new Logger("Special", WARN, ERROR); // logs warnings, throws exceptions on errors
+    static public var log = new debug.Logger("Special", WARN, ERROR); // logs warnings, throws exceptions on errors
     static public function main():Void
     {
         log("test log"); // Output: Special - test log
@@ -20,7 +20,7 @@ class Main
             log('exception thrown: ${e.message}'); // Output: Special - exception thrown: Special - ERROR:test log
         }
         // set custom logger
-        log.log = (msg, ?pos) -> haxe.Log.trace('SPECIAL_$msg', pos);
+        log.formatter = (priority, msg, ?pos) -> 'SPECIAL_$priority:$msg';
         log.error.throws = false;
         log.error("test log"); // Output: SPECIAL_ERROR:test log
     }

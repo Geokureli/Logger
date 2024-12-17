@@ -64,7 +64,7 @@ While the `Logger` constructor has `priority` and `throwPriority` args, these ca
 
 ### Quick overview
  - `-D log=WARN`: Set global log-priority to warnings and errors
- - `-D throw=WARN`: Set global throw-priority to errors
+ - `-D throw=ERROR`: Set global throw-priority to errors
  - `-D log=[info,error]`: Only log info and errors, not warnings and verbose
  - `-D combat.log=verbose`: Enable ALL logs with the id "Combat" (not case sensitive), overrides global log-priority
  
