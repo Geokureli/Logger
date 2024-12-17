@@ -1,0 +1,11 @@
+{
+	"name": "Logger",
+	"url" : "https://github.com/Geokureli/Logger",
+	"license": "MIT",
+	"tags": ["log", "logging", "trace"],
+	"description": "Simplify the categorization and prioritization of logs.",
+	"version": "0.0.0",
+	"releasenote": "Added FlxInputText, FlxG.assets, FlxBasePath and more",
+	"contributors": ["GeoKureli"],
+	"dependencies": {}
+}
