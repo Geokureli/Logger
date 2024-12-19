@@ -111,8 +111,8 @@ private class LoggerRaw
     public function new(?id, priority = WARN, throwPriority = ERROR)
     {
         this.id = id;
-        logLevels = PriorityList.fromCompilerFlag("log", id, PriorityList.fromPriority(priority));
-        throwLevels = PriorityList.fromCompilerFlag("throw", id, PriorityList.fromPriority(throwPriority));
+        logLevels = PriorityList.fromCompilerFlag(LOG, id, priority);
+        throwLevels = PriorityList.fromCompilerFlag(THROW, id, throwPriority);
         error = new LoggerPriority(this, ERROR);
         warn = new LoggerPriority(this, WARN);
         info = new LoggerPriority(this, INFO);
@@ -319,7 +319,7 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         return Priority.allButNone.filter((l) -> level.priority >= l.priority);
     }
     
-    static public function fromGlobalCompilerFlag(type:String, backup:PriorityList):PriorityList
+    static public function fromGlobalCompilerFlag(type:LogType, backup:PriorityList):PriorityList
     {
         if (LoggerDefines.all.exists(type))
             return fromString(LoggerDefines.all[type]);
@@ -327,7 +327,17 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         return backup;
     }
     
-    static public function fromCompilerFlag(type:String, id:Null<String>, backup:PriorityList):PriorityList
+    overload inline extern static public function fromCompilerFlag(type, id, backup:Priority)
+    {
+        return fromCompilerFlagHelper(type, id, fromPriority(backup));
+    }
+    
+    overload inline extern static public function fromCompilerFlag(type, id, backup)
+    {
+        return fromCompilerFlagHelper(type, id, backup);
+    }
+    
+    static function fromCompilerFlagHelper(type:LogType, id:Null<String>, backup:PriorityList):PriorityList
     {
         // Use global log level if there's no id
         if (id == null)
@@ -342,6 +352,12 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         // Use global log level as backup
         return fromGlobalCompilerFlag(type, backup);
     }
+}
+
+private enum abstract LogType(String) to String
+{
+    var LOG = "log";
+    var THROW = "throw";
 }
 
 /**
