@@ -319,10 +319,10 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         return Priority.allButNone.filter((l) -> level.priority >= l.priority);
     }
     
-    static public function fromGlobalCompilerFlag(backup:PriorityList):PriorityList
+    static public function fromGlobalCompilerFlag(type:String, backup:PriorityList):PriorityList
     {
-        if (LoggerDefines.all.exists("log"))
-            return fromString(LoggerDefines.all["log"]);
+        if (LoggerDefines.all.exists(type))
+            return fromString(LoggerDefines.all[type]);
         
         return backup;
     }
@@ -331,7 +331,7 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
     {
         // Use global log level if there's no id
         if (id == null)
-            return fromGlobalCompilerFlag(backup);
+            return fromGlobalCompilerFlag(type, backup);
         
         // Use specific log level if one is set, Note: tasc[foo] uses log.tasc
         final featureID = id.split('[')[0].toLowerCase();
@@ -340,7 +340,7 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
             return fromString(LoggerDefines.all[flagID]);
         
         // Use global log level as backup
-        return fromGlobalCompilerFlag(backup);
+        return fromGlobalCompilerFlag(type, backup);
     }
 }
 
