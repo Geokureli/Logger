@@ -1,10 +1,10 @@
 { "name"        : "logger"
-, "description" : "Simplify the categorization and prioritization of logs."
+, "description" : "Simplify the categorization and prioritization of logs, errors and assertions."
 , "version"     : "0.0.0"
 , "releasenote" : "Initial release"
 , "url"         : "https://github.com/Geokureli/Logger"
 , "classPath"   : "lib"
 , "license"     : "MIT"
-, "tags"        : ["log", "logging", "trace"]
+, "tags"        : ["log", "logging", "trace", "assert"]
 , "contributors": ["GeoKureli"]
 }
