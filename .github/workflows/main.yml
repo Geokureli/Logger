@@ -10,10 +10,10 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        # haxe-version: ["4.3.6"]
-      fail-fast: false
+    # strategy:
+    #   matrix:
+    #     haxe-version: ["4.3.6"]
+    #   fail-fast: false
     # runs-on: ubuntu-latest
     runs-on: macos-13
     steps:
