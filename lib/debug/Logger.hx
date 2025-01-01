@@ -59,7 +59,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
         haxe.Log.trace(msg, pos);
     }
     
-    dynamic static public function globalFormatter(id:String, priority:Priority, msg:Any, ?pos:PosInfos)
+    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos)
     {
         return if (id != null && priority != NONE)
             '$id[$priority]: $msg';
