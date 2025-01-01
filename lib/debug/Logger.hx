@@ -43,6 +43,11 @@ abstract Logger(LoggerRaw) from LoggerRaw
      */
     static public final log = new Logger(VERBOSE);
     
+    /**
+     * Shortcut for `Logger.log.error.assert`
+     * 
+     * Tip: Use `import.debug.Logger.assert;` in a module to simplfy your calls
+     */
     static public var assert(get, never):Assert;
     static inline function get_assert():Assert
     {
@@ -59,6 +64,9 @@ abstract Logger(LoggerRaw) from LoggerRaw
         haxe.Log.trace(msg, pos);
     }
     
+    /**
+     * Set this to make a custom log formatter, and log will use this to format it's information
+     */
     dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos)
     {
         return if (id != null && priority != NONE)

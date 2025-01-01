@@ -5,6 +5,22 @@ import haxe.macro.Expr;
 import haxe.macro.ExprTools;
 import haxe.macro.MacroStringTools;
 
+/**
+ * A group of tools used to log or throw based on expected conditions. For example to use the
+ * global logger's error log to throw an error:
+ * ```haxe
+ * final username = "JohnnyBoy420";
+ * final user = getUserData(username);
+ * // Throw an error if user is null
+ * Logger.assert(user != null, 'Could not find user data for $username');
+ * // Otherwise, check their birthday
+ * if (user.birthday == today)
+ *     trace('Happy birthday, ${user.fullName}!');
+ * ```
+ * The above assumes that the global logger is set to throw errors.
+ * 
+ * Can shorten calls to the global logger via `import debug.Logger.assert`
+ */
 @:forward
 abstract Assert(AssertRaw)
 {
@@ -19,10 +35,7 @@ abstract Assert(AssertRaw)
         return AssertRaw.eval(expr, args);
     }
 }
-/**
- * Various assert methods
- * @author George
- */
+
  @:allow(debug.Logger)
  @:allow(debug.Assert)
 class AssertRaw
@@ -39,8 +52,7 @@ class AssertRaw
     
     function new(fail:(String, ?PosInfos)->Void):Void
     {
-        if (fail != null)
-            this.fail = fail;
+        this.fail = fail;
     }
     
     function destroy()
@@ -48,12 +60,7 @@ class AssertRaw
         fail = null;
     }
     
-    // macro public function expr(expression:ExprOf<Bool>):Expr
-    // {
-    //     return getMsg(expression);
-    // }
-    
-    @:op(a())
+    /** Logs the message if the condition is not true */
     inline public function isTrue(cond:Bool, ?msg:String, ?pos:PosInfos):Bool
     {
         if (!cond)
@@ -62,79 +69,93 @@ class AssertRaw
         return cond;
     }
     
+    /** Logs the message if the condition is true */
     inline public function isFalse(cond:Bool, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(!cond, 'Expected false, got true', pos);
     }
     
+    /** Logs the message if the condition is not null */
     inline public function isNull(value:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(value == null, msg ?? 'Expected null, got ${q(value)}', pos);
     }
     
+    /** Logs the message if the condition is null */
     inline public function nonNull(value:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(value != null, msg ?? 'Unexpected null', pos);
     }
     
-    //@:generic
+    /** Logs the message if the map doesn't have the key */
     inline public function exists<K, T>(map:Map<K, T>, key:K, ?msg:String, ?pos:PosInfos):Bool
     {
         return nonNull(map, null, pos) 
             && isTrue(map.exists(key), msg ?? 'Could not find key ${Std.string(key)}', pos);
     }
     
-    //@:generic
+    /** Logs the message if the map has the key */
     inline public function notExists<K, T>(map:Map<K, T>, key:K, ?msg:String, ?pos:PosInfos):Bool
     {
         return nonNull(map, null, pos)
             && isTrue(!map.exists(key), msg ?? 'Unexpected key ${Std.string(key)}', pos);
     }
     
+    /** Logs the message if the object doesn't have the field. Uses Reflection */
     inline public function has(object:Dynamic, field:String, ?msg:String, ?pos:PosInfos):Bool
     {
         return nonNull(object, null, pos)
             && isTrue(Reflect.hasField(object, field), msg ?? 'Could not find field $field', pos);
     }
     
+    
+    /** Logs the message if the map has the field. Uses Reflection */
     inline public function missing(object:Dynamic, field:String, ?msg:String, ?pos:PosInfos):Bool
     {
         return nonNull(object, null, pos)
             && isTrue(!Reflect.hasField(object, field), msg ?? 'Unexpected field $field', pos);
     }
     
+    /** Logs the message if the value is not the type */
     inline public function is(value:Dynamic, type:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(Std.isOfType(value, type),
             msg ?? 'Expected type ${typeToString(type)}, found ${typeToString(value)}', pos);
     }
     
+    /** Logs the message if the value is the type */
     inline public function isNot(value:Dynamic, type:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(!Std.isOfType(value, type), msg ?? 'Unexpected type ${typeToString(type)}', pos);
     }
     
+    /** Logs the message if the value is not a class, class instance, structure or enum */
     inline public function isObject(value:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(Reflect.isObject(value), msg ?? "Expected Object type", pos);
     }
     
+    /** Logs the message if the value does not match the expected value */
     inline public function equals(value:Dynamic, expected:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(expected == value, msg ?? 'Expected ${q(expected)}, found ${q(value)}', pos);
     }
     
-    inline public function notEquals(value:Dynamic, expected:Dynamic, ?msg:String, ?pos:PosInfos):Bool
+    /** Logs the message if the value matches the unexpected value */
+    inline public function notEquals(value:Dynamic, unexpected:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
-        return isTrue(value != expected,
-            msg ?? 'Expected ${q(expected)} and test value ${q(value)} should be different', pos);
+        return isTrue(value != unexpected,
+            msg ?? 'Unexpected ${q(unexpected)} found, should be different', pos);
     }
     
+    /** Logs the message if the value doesn't match the pattern */
     inline public function match(pattern:EReg, value:Dynamic, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(pattern.match(value), msg ?? '${q(value)} does not match the provided pattern', pos);
     }
     
+    
+    /** Logs the message if the value is not *approxamitely* the expected value */
     inline public function floatEquals(value:Float, expected:Float, approx:Float = 1e-5, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(compareFloats(expected, value, approx),
@@ -155,20 +176,30 @@ class AssertRaw
         return Math.abs(value - expected) <= approx;
     }
     
-    inline public function contains<T>(list:Iterable<T>, item:T, ?msg:String, ?pos:PosInfos):Bool
+    /** Logs the message if the list doesn't contain the value */
+    overload inline extern public function contains<T>(list:Iterable<T>, item:T, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(Lambda.has(list, item), msg ?? 'Couldn\'t find ${item} in ${q(list)}', pos);
     }
     
-    inline public function notContains<T>(list:Array<T>, item:T, ?msg:String, ?pos:PosInfos):Bool
+    /** Logs the message if the list contains the value */
+    overload inline extern public function notContains<T>(list:Iterable<T>, item:T, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(!Lambda.has(list, item), msg ?? 'Found unexpected ${item} in ${q(list)}', pos);
     }
     
-    inline public function stringContains(str:String, token:String, ?msg:String, ?pos:PosInfos):Bool
+    /** Logs the message if the string doesn't contain the value */
+    overload inline extern public function contains(str:String, token:String, ?msg:String, ?pos:PosInfos):Bool
     {
         return isTrue(str != null && str.indexOf(token) >= 0,
             msg ?? 'String ${q(str)} do not contain ${token}', pos);
+    }
+    
+    /** Logs the message if the string doesn't contain the value */
+    overload inline extern public function notContains(str:String, token:String, ?msg:String, ?pos:PosInfos):Bool
+    {
+        return isTrue(str == null || str.indexOf(token) < 0,
+            msg ?? 'Found unexpected ${token} in ${q(str)}', pos);
     }
     
     // =============================================================================
@@ -218,9 +249,8 @@ class AssertRaw
     //} endregion                         HELPERS
     // =============================================================================
     
-    
     #if macro
-    static public function eval(instance:Expr, args:Array<Expr>):Expr
+    static function eval(instance:Expr, args:Array<Expr>):Expr
     {
         if (args.length == 1)
             return evalFinal(instance, args[0]);
