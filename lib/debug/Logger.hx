@@ -43,6 +43,12 @@ abstract Logger(LoggerRaw) from LoggerRaw
      */
     static public final log = new Logger(VERBOSE);
     
+    static public var assert(get, never):Assert;
+    static inline function get_assert():Assert
+    {
+        return log.assert;
+    }
+    
     /**
      * Controls how each every Logger will actually log the message, this can also be set for each
      * individual logger with:
