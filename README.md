@@ -59,6 +59,28 @@ class Main
 }
 ```
 
+## Assertions
+Each log priority has an `assert`, which has a variety of standard assertion methods like `isTrue(someBool)` or `equals(someInt, 5)` which will log if untrue. You can also call `assert` directly with a condition and it will output the condition's expression in the logged message. For example:
+```hx
+final log = Logger.log;
+log.error.throws = false;
+
+// Check bool
+final condition = false;
+log.error.assert.isTrue(condition); // Error: Expected true, found false
+
+final a = 5;
+
+// check equality
+log.error.assert.equals(a, 10); // Error: Expected 10, found 5
+
+// check expression
+log.error.assert(a == 10); // Error: Assertion failed: a == 10
+
+// shorter equivalent
+log.assert(a == 10); // Error: Assertion failed: a == 10
+```
+
 ## Enabling logs via compile flags
 While the `Logger` constructor has `priority` and `throwPriority` args, these can be overriden from compiler flags, by adding the flag `-D log=WARN` all log priorities less than `WARN` (i.e.: `INFO` and `VERBOSE`) are disabled. You can also specify exactly which priorities are enabled, for example, `-D log=[info,error]` will disable all priorities other than `INFO` and `ERROR`. The `log` flag will also effect all categories, unless the category has it's own log priorities set in compiler flags. For example, a logger with the id "Combat" can have its log priorities set via `-D combat.log=error`. There is a similar `throw` flag to specify which logs throw an exception
 

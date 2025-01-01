@@ -1,5 +1,6 @@
 package debug;
 
+import debug.Assert;
 import haxe.PosInfos;
 
 /**
@@ -33,7 +34,7 @@ import haxe.PosInfos;
  * - `-D combat.log=verbose`: Enable ALL logs with the id "Combat" (not case sensitive), overrides global log-priority
  */
 @:forward
-abstract Logger(LoggerRaw)
+abstract Logger(LoggerRaw) from LoggerRaw
 {
     /**
      * The default logger, able to be referenced anywhere
@@ -41,6 +42,17 @@ abstract Logger(LoggerRaw)
      * Tip: Use `import.debug.Logger.log;` in a module to simplfy your calls
      */
     static public final log = new Logger(VERBOSE);
+    
+    /**
+     * Shortcut for `Logger.log.error.assert`
+     * 
+     * Tip: Use `import.debug.Logger.assert;` in a module to simplfy your calls
+     */
+    static public var assert(get, never):Assert;
+    static inline function get_assert():Assert
+    {
+        return log.assert;
+    }
     
     /**
      * Controls how each every Logger will actually log the message, this can also be set for each
@@ -52,7 +64,10 @@ abstract Logger(LoggerRaw)
         haxe.Log.trace(msg, pos);
     }
     
-    dynamic static public function globalFormatter(id:String, priority:Priority, msg:Any, ?pos:PosInfos)
+    /**
+     * Set this to make a custom log formatter, and log will use this to format it's information
+     */
+    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos)
     {
         return if (id != null && priority != NONE)
             '$id[$priority]: $msg';
@@ -95,6 +110,15 @@ private class LoggerRaw
     
     final logLevels:PriorityList;
     final throwLevels:PriorityList;
+    
+    /**
+     * Shortcut for `error.assert`
+     */
+    public var assert(get, never):Assert;
+    inline function get_assert():Assert
+    {
+        return error.assert;
+    }
     
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
     public final error:LoggerPriority;
@@ -186,60 +210,6 @@ private class LoggerRaw
         
         if (logEnabled(level))
             logFinal(level, msg, pos);
-    }
-}
-
-@:forward(enabled, throws)
-abstract LoggerPriority(LoggerPriorityRaw)
-{
-    public function new(parent, level)
-    {
-        this = new LoggerPriorityRaw(parent, level);
-    }
-    
-    @:op(a())
-    inline function callPos(msg:Any, ?pos:PosInfos)
-    {
-        this.log(msg, pos);
-    }
-    
-    @:allow(debug.LoggerRaw)
-    inline function destroy()
-    {
-        this.destroy();
-    }
-}
-
-@:allow(debug.LoggerPriority)
-private class LoggerPriorityRaw
-{
-    var parent:LoggerRaw;
-    final level:Priority;
-    
-    /** Whether this log level is enabled */
-    public var enabled(get, set):Bool;
-    inline function get_enabled() return parent.logEnabled(level);
-    inline function set_enabled(value:Bool) return parent.setLogEnabled(level, value);
-    
-    /** Whether this log level is set to throw exceptions when called */
-    public var throws(get, set):Bool;
-    inline function get_throws() return parent.throwEnabled(level);
-    inline function set_throws(value:Bool) return parent.setThrowEnabled(level, value);
-    
-    public function new(parent:LoggerRaw, level:Priority)
-    {
-        this.parent = parent;
-        this.level = level;
-    }
-    
-    public function destroy()
-    {
-        parent = null;
-    }
-    
-    function log(msg:Any, ?pos:PosInfos):Void
-    {
-        parent.logIf(level, msg, pos);
     }
 }
 
