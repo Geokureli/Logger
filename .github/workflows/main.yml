@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  repository_dispatch:
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  build:
+    # strategy:
+    #   matrix:
+    #     haxe-version: ["4.3.6"]
+    #   fail-fast: false
+    # runs-on: ubuntu-latest
+    runs-on: macos-13
+    steps:
+    # - run: sudo apt-get update
+    
+    - uses: actions/checkout@v4
+    
+    - uses: krdlab/setup-haxe@v1
+      with:
+        # haxe-version: ${{matrix.haxe-version}}
+        haxe-version: "4.3.4"
+    
+    - name: Set HAXEPATH
+      run: |
+        echo "HAXEPATH=$HAXE_STD_PATH/.." >> $GITHUB_ENV
+    
+    - name: Build test
+      run: |
+        echo "Building test"
+        haxe -cp test/src -cp lib -D analyzer-optimize -main Main --interp
