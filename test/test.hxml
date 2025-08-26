@@ -1,0 +1,11 @@
+--class-path src
+--class-path ../lib/
+--main Main
+-D main.log=warn
+-D sub.log=verbose
+--dce full
+-D analyzer-optimize
+-D logger.verboseMacroErrors
+# -D slim1.log=NONE
+# --js export/js/app.js
+--interp

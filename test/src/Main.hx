@@ -1,28 +1,36 @@
-import debug.Logger.log as gLog;
 import debug.Logger.assert as gAssert;
+import debug.Logger.log as gLog;
 class Main
 {
-    static public var log = new debug.Logger("Special", WARN, ERROR); // logs warnings, throws exceptions on errors
+    static public var log = new debug.Logger("Main", WARN, ERROR); // logs warnings, throws exceptions on errors
     static public function main():Void
     {
-        log("test log"); // Output: Special: test log
-        log.warn("test log"); // Output: Special: WARN:test log
+        log("--- Testing logs --- "); // Output: Main: test log
+        log.warn("test log"); // Output: Main: WARN:test log
         log.info("test log"); // ignored
         log.setPriority(INFO);
-        log.info("test log"); // Special: INFO:test log
+        log.info("test log"); // Main: INFO:test log
         log.verbose("test log"); // ignored
+        log.sub("sub[context]").verbose("test sub log"); // ignored
         log.verbose.enabled = true;
-        log.verbose("test log"); // Output: Special: VERBOSE:test log
+        log.verbose("test log"); // Output: Main: VERBOSE:test log
         try
         {
             log.error("test log"); // throws exception
         }
         catch(e)
         {
-            gLog('exception thrown: ${e.message}'); // Output: exception thrown: Special[ERROR]:test log
+            gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
         }
         
+        // subs
+        log("--- Testing subs ---");
+        final logSub = log.sub("sub[TEST]");
+        logSub.verbose("test sub log");
+        logSub.sub("supersup").verbose("test supersub log");
+        
         // asserts
+        log("--- Testing asserts ---");
         log.verbose.assert(5 < 3);
         log.info.assert(5 < 3);
         log.warn.assert(5 < 3);
@@ -32,12 +40,12 @@ class Main
         }
         catch(e)
         {
-            gLog('exception thrown: ${e.message}'); // Output: exception thrown: Special[ERROR]:test log
+            gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
         }
         // set custom logger
-        log.formatter = (priority, msg, ?pos) -> 'SPECIAL_$priority:$msg';
+        log.formatter = (priority, msg, ?pos) -> 'MAIN_$priority:$msg';
         log.error.throws = false;
-        log.error("test log"); // Output: SPECIAL_ERROR:test log
+        log.error("test log"); // Output: MAIN_ERROR:test log
         
         // Global logger (notice `import debug.Logger.log as gLog;`)
         gLog("test log");
@@ -50,7 +58,7 @@ class Main
         }
         catch(e)
         {
-            gLog('exception thrown: ${e.message}'); // Output: exception thrown: Special[ERROR]:test log
+            gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
         }
     }
 }

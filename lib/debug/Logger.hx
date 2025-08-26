@@ -88,15 +88,20 @@ abstract Logger(LoggerRaw) from LoggerRaw
      * @param   priority       Determines the lowest priority to be logged
      * @param   throwPriority  Determines the lowest priority to throw exceptions
      */
-    public function new(?id, priority = WARN, throwPriority = ERROR)
+    inline public function new(?id, priority = WARN, throwPriority = ERROR)
     {
-        this = new LoggerRaw(id, priority, throwPriority);
+        this = LoggerRaw.fromLevels(id, priority, throwPriority);
     }
     
     @:op(a())
     inline function callPos(msg:Any, ?pos:PosInfos)
     {
         this.log(msg, pos);
+    }
+    
+    inline public function sub(subID:String):Logger
+    {
+        return this.sub(subID);
     }
 }
 
@@ -132,7 +137,7 @@ private class LoggerRaw
     /** Meant to be called, directly like a function, but also has an `enabled` and `throws` field */
     public final verbose:LoggerPriority;
     
-    public function new(?id, priority = WARN, throwPriority = ERROR)
+    public function new(?id, priority:PriorityList, throwPriority:PriorityList)
     {
         this.id = id;
         logLevels = PriorityList.fromCompilerFlag(LOG, id, priority);
@@ -162,6 +167,7 @@ private class LoggerRaw
         Logger.globalLog(formatter(priority, msg, pos), pos);
     }
     
+    // TODO: public var formatter = Logger.globalFormatter;
     dynamic public function formatter(priority:Priority, msg:Any, ?pos:PosInfos)
     {
         return Logger.globalFormatter(id, priority, msg, pos);
@@ -211,6 +217,27 @@ private class LoggerRaw
         if (logEnabled(level))
             logFinal(level, msg, pos);
     }
+    
+    final subs = new Map<String, LoggerRaw>();
+    public function sub(subID:String)
+    {
+        if (false == subs.exists(subID))
+            subs[subID] = LoggerRaw.fromParent(subID, this);
+        
+        return subs[subID];
+    }
+    
+    static public function fromLevels(id:String, logLevel = WARN, throwLevel = ERROR)
+    {
+        return new LoggerRaw(id, PriorityList.fromPriority(logLevel), PriorityList.fromPriority(throwLevel));
+    }
+    
+    static public function fromParent(subID:String, parent:LoggerRaw)
+    {
+        final logger = new LoggerRaw('${parent.id}.$subID', parent.logLevels, parent.throwLevels);
+        // logger.formatter = parent.formatter;
+        return logger;
+    }
 }
 
 abstract PriorityList(Array<Priority>) from Array<Priority>
@@ -219,6 +246,12 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
     {
         this = levels;
     }
+    
+    public function copy()
+    {
+        return this.copy();
+    }
+    
     
     public function setPriority(priority:Priority)
     {
@@ -302,26 +335,83 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         return fromCompilerFlagHelper(type, id, fromPriority(backup));
     }
     
-    overload inline extern static public function fromCompilerFlag(type, id, backup)
+    overload inline extern static public function fromCompilerFlag(type, id, backup:PriorityList)
     {
         return fromCompilerFlagHelper(type, id, backup);
     }
     
+    static final flagsByID = new Map<String, Null<String>>();
+    
+    inline static var SUB_DELIMITER = ".";
+    static final contextFinder = ~/\[.*?\]/;
     static function fromCompilerFlagHelper(type:LogType, id:Null<String>, backup:PriorityList):PriorityList
     {
         // Use global log level if there's no id
         if (id == null)
             return fromGlobalCompilerFlag(type, backup);
         
-        // Use specific log level if one is set, Note: tasc[foo] uses log.tasc
-        final featureID = id.split('[')[0].toLowerCase();
-        final flagID = '$featureID.$type';
-        if (LoggerDefines.all.exists(flagID))
-            return fromString(LoggerDefines.all[flagID]);
+        final id = contextFinder.replace(id.toLowerCase(), "");
+        
+        // check if flags are cached for this id
+        final key = '$id.$type';
+        if (flagsByID.exists(key))
+        {
+            final flags = flagsByID[key];
+            if (flags == null)
+                return fromGlobalCompilerFlag(type, backup);
+            
+            return fromString(flags);
+        }
+        
+        // check various combos of the sub categories
+        final flag = checkAllFlags(id, type);
+        
+        // cache the flags for this id
+        if (flag != null)
+        {
+            flagsByID[key] = LoggerDefines.all[flag];
+            return fromString(flagsByID[key]);
+        }
         
         // Use global log level as backup
+        flagsByID[key] = null;
         return fromGlobalCompilerFlag(type, backup);
     }
+    
+    static function checkAllFlags(id:String, type:LogType):Null<String>
+    {
+        function check(id:String)
+        {
+            return LoggerDefines.all.exists('$id.$type');
+            // final found = LoggerDefines.all.exists('$id.$type');
+            // trace('$id.$type: $found');
+            // return found;
+        }
+        
+        // check the full id
+        final fullCheck = check(id);
+        if (fullCheck)
+            return '${id}${SUB_DELIMITER}${type}';
+        
+        var firstIndex = id.indexOf(SUB_DELIMITER);
+        if (firstIndex == -1)
+            return null;
+        
+        // check flags matching the sub id first
+        while(firstIndex != -1)
+        {
+            final subFlag = id.substr(firstIndex + 1);
+            if (check(subFlag))
+                return '${subFlag}${SUB_DELIMITER}${type}';
+            firstIndex = id.indexOf(SUB_DELIMITER, firstIndex+1);
+        }
+        
+        // remove last sub and try again
+        final lastIndex = id.lastIndexOf(SUB_DELIMITER);
+        return checkAllFlags(id.substr(0, lastIndex), type);
+    }
+    
+    
 }
 
 private enum abstract LogType(String) to String
