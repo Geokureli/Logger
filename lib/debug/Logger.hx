@@ -41,7 +41,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
      * 
      * Tip: Use `import.debug.Logger.log;` in a module to simplfy your calls
      */
-    static public final log = new Logger(VERBOSE);
+    static public final log:Logger = LoggerRaw.fromLevels(null, VERBOSE);
     
     /**
      * Shortcut for `Logger.log.error.assert`
@@ -79,6 +79,8 @@ abstract Logger(LoggerRaw) from LoggerRaw
             '$msg';
     }
     
+    static final list = new Map<String, LoggerRaw>();
+    
     /**
      * Creates a new logger
      * 
@@ -90,7 +92,20 @@ abstract Logger(LoggerRaw) from LoggerRaw
      */
     inline public function new(?id, priority = WARN, throwPriority = ERROR)
     {
-        this = LoggerRaw.fromLevels(id, priority, throwPriority);
+        if (id == null)
+        {
+            this = (cast Logger.log: LoggerRaw);
+        }
+        else if (list.exists(id))
+        {
+            // Note: do not set priority again
+            this = list[id];
+        }
+        else
+        {
+            this = LoggerRaw.fromLevels(id, priority, throwPriority);
+            list[id] = this;
+        }
     }
     
     @:op(a())
@@ -99,9 +114,23 @@ abstract Logger(LoggerRaw) from LoggerRaw
         this.log(msg, pos);
     }
     
-    inline public function sub(subID:String):Logger
+    /**
+     * Creates a sub-category of this category, capable of having its own priorities.
+     * By default, the priorities will match this, unless specifically set via compile flags
+     * 
+     * @param   subID  The id of the sub category
+     * @return  A different logger
+     */
+    public function sub(subID:String):Logger
     {
-        return this.sub(subID);
+        if (this.id == null)
+            return new Logger(subID);
+        
+        final fullID = '${this.id}.$subID';
+        if (list.exists(fullID))
+            return list[fullID];
+        
+        return list[fullID] = LoggerRaw.fromParent(subID, this);
     }
 }
 
@@ -218,16 +247,7 @@ private class LoggerRaw
             logFinal(level, msg, pos);
     }
     
-    final subs = new Map<String, LoggerRaw>();
-    public function sub(subID:String)
-    {
-        if (false == subs.exists(subID))
-            subs[subID] = LoggerRaw.fromParent(subID, this);
-        
-        return subs[subID];
-    }
-    
-    static public function fromLevels(id:String, logLevel = WARN, throwLevel = ERROR)
+    static public function fromLevels(id:Null<String>, logLevel = WARN, throwLevel = ERROR)
     {
         return new LoggerRaw(id, PriorityList.fromPriority(logLevel), PriorityList.fromPriority(throwLevel));
     }
