@@ -3,7 +3,6 @@
 --main Main
 -D main.log=warn
 -D alt.log=info
--D sub.log=verbose
 -D main.sub.log=warn
 --dce full
 -D analyzer-optimize

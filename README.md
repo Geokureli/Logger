@@ -84,9 +84,27 @@ log.assert(a == 10); // Error: Assertion failed: a == 10
 ## Enabling logs via compile flags
 While the `Logger` constructor has `priority` and `throwPriority` args, these can be overriden from compiler flags, by adding the flag `-D log=WARN` all log priorities less than `WARN` (i.e.: `INFO` and `VERBOSE`) are disabled. You can also specify exactly which priorities are enabled, for example, `-D log=[info,error]` will disable all priorities other than `INFO` and `ERROR`. The `log` flag will also effect all categories, unless the category has it's own log priorities set in compiler flags. For example, a logger with the id "Combat" can have its log priorities set via `-D combat.log=error`. There is a similar `throw` flag to specify which logs throw an exception
 
+## Subcategories
+Categories can have subcategories, useful for specific logs that pertain to a larger category, but requires a different priority than the rest. For example:
+```hx
+final playerLog = new debug.Logger("Player", INFO);
+final enemyLog = new debug.Logger("Enemy", INFO);
+
+playerLog.sub("Sound").info("Playing jump sound"); // Player.Sound[INFO]: Playing jump sound
+enemyLog.sub("Sound").warn("Not playing any sound"); // Enemy.Sound[WARN]: Not playing any sound
+```
+
+Subcategories will have the same level as the parent by default, but can also be set by compiler flags matching the subcategories id or the full "parent.sub" id. In the example above, `-D player.sound.log=verbose` will affect the player's sound logs, but not enemies, and `-D sound.log=verbose` will affect both. If both of the following compiler flags are set, all sound logs will be hidden except player sound logs:
+```hxml
+-D player.sound.log=verbose
+-D sound.log=none
+```
+
 ### Quick overview
  - `-D log=WARN`: Set global log-priority to warnings and errors
  - `-D throw=ERROR`: Set global throw-priority to errors
  - `-D log=[info,error]`: Only log info and errors, not warnings and verbose
  - `-D combat.log=verbose`: Enable ALL logs with the id "Combat" (not case sensitive), overrides global log-priority
+ - `-D sound.log=error`: Override all sound subcategories
+ - `-D combat.sound.log=warn`: Override combat's log priority specifically for all sound related logs
  

@@ -12,6 +12,7 @@ class Main
         log.setPriority(INFO);
         log.info("test log"); // Main: INFO:test log
         log.verbose("test log"); // ignored
+        log.sub("sub").verbose("test sub log"); // ignored
         log.sub("sub[context]").verbose("test sub log"); // ignored
         log.verbose.enabled = true;
         log.verbose("test log"); // Output: Main: VERBOSE:test log
@@ -30,6 +31,7 @@ class Main
         altLog.setPriority(INFO);
         altLog.info("test log"); // Alt: INFO:test log
         altLog.verbose("test log"); // ignored
+        altLog.sub("sub").verbose("test sub log"); // ignored
         altLog.sub("sub[context]").verbose("test sub log"); // ignored
         altLog.verbose.enabled = true;
         altLog.verbose("test log"); // Output: Alt: VERBOSE:test log
