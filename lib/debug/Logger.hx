@@ -524,7 +524,7 @@ class LoggerDefines
     /**
      * Every single compiler flag, and its value
      */
-    #if (!display && !macro)
+    #if (!macro)
     public static final all:Map<String, String> = getDefines();
   	#else
     public static final all:Map<String, String> = [];
