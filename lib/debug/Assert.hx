@@ -258,7 +258,7 @@ class AssertRaw
         if (args.length == 2)
             return evalFinal(instance, args[0], args[1]);
         
-        throw "Invalid number of args";
+        throw 'Invalid number of args, expecting (condition:Bool, ?msg:String):Void, got ${args}';
     }
     
     static function evalFinal(instance:Expr, cond:ExprOf<Bool>, ?msg:ExprOf<String>):Expr

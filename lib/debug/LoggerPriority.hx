@@ -3,7 +3,7 @@ package debug;
 import debug.Logger;
 import haxe.PosInfos;
 
-@:forward(enabled, throws, assert)
+@:forward(enabled, throws, assert, level)
 abstract LoggerPriority(LoggerPriorityRaw)
 {
     public function new(parent, level)
@@ -28,7 +28,7 @@ abstract LoggerPriority(LoggerPriorityRaw)
 private class LoggerPriorityRaw
 {
     var parent:Logger;
-    final level:Priority;
+    public final level:Priority;
     
     public var assert(default, null):Assert;
     
