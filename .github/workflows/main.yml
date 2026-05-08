@@ -69,5 +69,5 @@ jobs:
       run: |
         echo "Building unit tests"
         cd tests/unit/
-        haxe tests/unit/test.hxml
+        haxe test.hxml
         cd ../../
