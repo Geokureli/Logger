@@ -1,5 +1,6 @@
 import debug.Logger;
 import debug.LoggerPriority;
+import debug.ansi.StyleTools;
 import utest.Assert as UAssert;
 
 class Main
@@ -231,5 +232,24 @@ class Test1 extends Test
         UAssert.equals(true , logC2.info.enabled);
         UAssert.equals(true , logC2.warn.enabled);
         UAssert.equals(true , logC2.error.enabled);
+    }
+    
+    function testContext()
+    {
+        final context = new Logger(log1.id + "[context]");
+        UAssert.notEquals(log1, context);
+    }
+    
+    function testColor()
+    {
+        UAssert.equals(new Logger(StyleTools.style(log1.id, RED)), log1);
+        
+        final sub1 = log1.sub("a");
+        final sub2 = log1.sub(StyleTools.style("a", RED));
+        UAssert.equals(sub1, sub2);
+        
+        final context1 = new Logger(log1.id + "[context]");
+        final context2 = new Logger(log1.id + StyleTools.style("[context]", RED));
+        UAssert.equals(context1, context2);
     }
 }

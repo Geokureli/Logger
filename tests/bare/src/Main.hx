@@ -1,5 +1,7 @@
 import debug.Logger.assert as gAssert;
 import debug.Logger.log as gLog;
+
+using debug.ansi.StyleTools;
 class Main
 {
     static public var log = new debug.Logger("Main", WARN, ERROR); // logs warnings, throws exceptions on errors
@@ -12,8 +14,8 @@ class Main
         log.setPriority(INFO);
         log.info("test log"); // Main: INFO:test log
         log.verbose("test log"); // ignored
-        log.sub("sub").verbose("test sub log"); // ignored
-        log.sub("sub[context]").verbose("test sub log"); // ignored
+        log.sub("Sub").verbose("test sub log"); // ignored
+        log.sub('Sub[${"Context".style(WHITE)}]').verbose("test sub log");
         log.verbose.enabled = true;
         log.verbose("test log"); // Output: Main: VERBOSE:test log
         try
@@ -31,20 +33,20 @@ class Main
         altLog.setPriority(INFO);
         altLog.info("test log"); // Alt: INFO:test log
         altLog.verbose("test log"); // ignored
-        altLog.sub("sub").verbose("test sub log"); // ignored
-        altLog.sub("sub[context]").verbose("test sub log"); // ignored
+        altLog.sub("Sub").verbose("test sub log"); // ignored
+        altLog.sub("Sub[Context]").verbose("test sub log"); // ignored
         altLog.verbose.enabled = true;
         altLog.verbose("test log"); // Output: Alt: VERBOSE:test log
         
         // subs
         log("--- Testing subs ---");
-        final logSub = log.sub("sub[TEST]");
+        final logSub = log.sub("Sub[TEST]");
         logSub.warn("test sub log");
         logSub.info("test sub log");
         logSub.verbose("test sub log");
-        logSub.sub("supersup").verbose("test supersub log");
+        logSub.sub("Supersup".style(GREEN)).verbose("test " + "supersub".style(RED) + " log");
         
-        final altLogSub = altLog.sub("sub[TEST]");
+        final altLogSub = altLog.sub("Sub[TEST]");
         altLogSub.warn("test sub log");
         altLogSub.info("test sub log");
         altLogSub.verbose("test sub log");
@@ -61,7 +63,7 @@ class Main
         }
         catch(e)
         {
-            gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
+            gLog('Exception caught: ${e.message}'); // Output: Exception caught: Main[ERROR]: Assertion failed: 5 < 3
         }
         // set custom logger
         log.formatter = (priority, msg, ?pos) -> 'MAIN_$priority:$msg';
@@ -79,7 +81,7 @@ class Main
         }
         catch(e)
         {
-            gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
+            gLog('Exception caught: ${e.message}'); // Output: Exception caught: ERROR: Assertion failed: 5 < 3
         }
     }
 }
