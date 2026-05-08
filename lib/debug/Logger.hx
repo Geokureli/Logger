@@ -177,14 +177,6 @@ private class LoggerRaw
         verbose = new LoggerPriority(this, VERBOSE);
     }
     
-    #if logger.unit_test
-    public function resetFromCompilerFlags()
-    {
-        logLevels.resetFromCompilerFlags(LOG, id);
-        throwLevels.resetFromCompilerFlags(THROW, id);
-    }
-    #end
-    
     public function destroy()
     {
         error.destroy();
@@ -192,6 +184,14 @@ private class LoggerRaw
         info.destroy();
         verbose.destroy();
     }
+    
+    #if logger.unit_test
+    public function resetFromCompilerFlags()
+    {
+        logLevels.resetFromCompilerFlags(LOG, id);
+        throwLevels.resetFromCompilerFlags(THROW, id);
+    }
+    #end
     
     public function log(msg:Any, ?pos:PosInfos)
     {
