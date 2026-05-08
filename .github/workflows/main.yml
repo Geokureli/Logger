@@ -24,13 +24,24 @@ jobs:
     - uses: krdlab/setup-haxe@v1
       with:
         # haxe-version: ${{matrix.haxe-version}}
-        haxe-version: "4.3.4"
+        haxe-version: "4.3.7"
     
     - name: Set HAXEPATH
       run: |
         echo "HAXEPATH=$HAXE_STD_PATH/.." >> $GITHUB_ENV
     
+    - name: Install haxe libs
+      shell: bash
+      id: prerequisites
+      run: |
+        haxelib install utest
+
     - name: Build test
       run: |
         echo "Building test"
-        haxe -cp test/src -cp lib -D analyzer-optimize -main Main --interp
+        haxe -cp tests/bare/src -cp lib -D analyzer-optimize -main Main --interp
+    
+    - name: Build test
+      run: |
+        echo "Building test"
+        haxe -cp tests/bare/src -cp lib -D analyzer-optimize -main Main --interp

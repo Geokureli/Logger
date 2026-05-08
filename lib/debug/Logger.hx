@@ -177,6 +177,14 @@ private class LoggerRaw
         verbose = new LoggerPriority(this, VERBOSE);
     }
     
+    #if logger.unit_test
+    public function resetFromCompilerFlags()
+    {
+        logLevels.resetFromCompilerFlags(LOG, id);
+        throwLevels.resetFromCompilerFlags(THROW, id);
+    }
+    #end
+    
     public function destroy()
     {
         error.destroy();
@@ -272,7 +280,6 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         return this.copy();
     }
     
-    
     public function setPriority(priority:Priority)
     {
         this.resize(0);
@@ -313,6 +320,22 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         
         return value;
     }
+    
+    function copyBase(arr:Array<Priority>)
+    {
+        this.splice(0, this.length);
+        for (i in 0...arr.length)
+            this.push(arr[i]);
+    }
+    
+    #if logger.unit_test
+    public function resetFromCompilerFlags(type:LogType, id:String)
+    {
+        final newList = fromCompilerFlag(type, id, this);
+        if (newList != this)
+            copyBase(cast newList);
+    }
+    #end
     
     static final arrReg = ~/^\[(.+)\]$/;
     
@@ -493,7 +516,10 @@ enum abstract Priority(Int)
     }
 }
 
-private class LoggerDefines
+#if !logger.unit_test
+private 
+#end
+class LoggerDefines
 {
     /**
      * Every single compiler flag, and its value
