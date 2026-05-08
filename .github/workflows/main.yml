@@ -34,16 +34,16 @@ jobs:
     - name: Git Checkout
       uses: actions/checkout@v2 #https://github.com/actions/checkout
 
-    - name: "Cache Haxelib Repository"
-      uses: actions/cache@v4
-      with:
-        path: $RUNNER_TOOL_CACHE/haxe/${{ matrix.haxe }}/x64/lib
-        key: ${{ runner.os }}-haxelib-${{ hashFiles('**/haxelib.json') }}
-        restore-keys: |
-          ${{ runner.os }}-haxelib-
+    # - name: "Cache Haxelib Repository"
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: $RUNNER_TOOL_CACHE/haxe/${{ matrix.haxe }}/x64/lib
+    #     key: ${{ runner.os }}-haxelib-${{ hashFiles('**/haxelib.json') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-haxelib-
 
     - name: Install Haxe ${{ matrix.haxe }}
-      uses: krdlab/setup-haxe@v1 # https://github.com/krdlab/setup-haxe
+      uses: krdlab/setup-haxe@v2 # https://github.com/krdlab/setup-haxe
       with:
         haxe-version: ${{ matrix.haxe }}
 
