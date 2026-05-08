@@ -1,47 +1,68 @@
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
 name: CI
 
 on:
   push:
+    paths-ignore:
+    - '**/*.md'
+    - '.vscode/*'
   pull_request:
-  workflow_dispatch:
-  repository_dispatch:
-  schedule:
-    - cron: '0 4 * * *'
+  # workflow_dispatch:
+  # repository_dispatch:
+  # schedule:
+  #   - cron: '0 4 * * *'
 
 jobs:
   build:
-    # strategy:
-    #   matrix:
-    #     haxe-version: ["4.3.6"]
-    #   fail-fast: false
-    # runs-on: ubuntu-latest
-    runs-on: macos-13
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        haxe:
+          - latest
+          - 4.3.7
+
     steps:
-    # - run: sudo apt-get update
-    
-    - uses: actions/checkout@v4
-    
-    - uses: krdlab/setup-haxe@v1
+    - name: Show environment variables
+      shell: bash
+      run: env | sort
+
+    - name: Git Checkout
+      uses: actions/checkout@v2 #https://github.com/actions/checkout
+
+    - name: "Cache Haxelib Repository"
+      uses: actions/cache@v2
       with:
-        # haxe-version: ${{matrix.haxe-version}}
-        haxe-version: "4.3.7"
-    
-    - name: Set HAXEPATH
-      run: |
-        echo "HAXEPATH=$HAXE_STD_PATH/.." >> $GITHUB_ENV
-    
+        path: $RUNNER_TOOL_CACHE/haxe/${{ matrix.haxe }}/x64/lib
+        key: ${{ runner.os }}-haxelib-${{ hashFiles('**/haxelib.json') }}
+        restore-keys: |
+          ${{ runner.os }}-haxelib-
+
+    - name: Install Haxe ${{ matrix.haxe }}
+      uses: krdlab/setup-haxe@v1 # https://github.com/krdlab/setup-haxe
+      with:
+        haxe-version: ${{ matrix.haxe }}
+
     - name: Install haxe libs
       shell: bash
       id: prerequisites
       run: |
-        haxelib install utest
+        haxelib git utest https://github.com/haxe-utest/utest.git
 
-    - name: Build test
+
+    ##################################################
+    # Tests
+    ##################################################
+
+    - name: Build bare test
       run: |
-        echo "Building test"
-        haxe -cp tests/bare/src -cp lib -D analyzer-optimize -main Main --interp
+        echo "Building baertest"
+        haxe tests/bare/test.hxml
     
-    - name: Build test
+    - name: Build unit tests
       run: |
-        echo "Building test"
-        haxe -cp tests/bare/src -cp lib -D analyzer-optimize -main Main --interp
+        echo "Building unit tests"
+        haxe tests/bare/test.hxml
