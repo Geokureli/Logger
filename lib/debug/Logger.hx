@@ -101,7 +101,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
             case VERBOSE:
                 msg.style(DIM);
         }
-            }
+    }
     
     static final list = new Map<String, LoggerRaw>();
     
