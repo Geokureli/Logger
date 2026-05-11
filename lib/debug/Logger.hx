@@ -58,7 +58,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
     /**
      * Controls how each every Logger will actually log the message
      */
-    dynamic static public function globalLog(msg:String, ?pos:PosInfos)
+    dynamic static public function globalLog(msg:Any, ?pos:PosInfos)
     {
         haxe.Log.trace(msg, pos);
     }
@@ -66,7 +66,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
     /**
      * Set this to make a custom log formatter, and log will use this to format it's information
      */
-    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos)
+    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos):Any
     {
         final result =
             if (id != null && priority != NONE)
@@ -96,8 +96,6 @@ abstract Logger(LoggerRaw) from LoggerRaw
                 result.style(DIM);
         }
         #end
-        
-        return msg;
     }
     
     static final list = new Map<String, LoggerRaw>();
