@@ -63,13 +63,9 @@ jobs:
     - name: Build bare test
       run: |
         echo "Building bare test"
-        cd tests/bare/
-        haxe test.hxml
-        cd ../../
+        haxe tests/bare/test.hxml
         
     - name: Build unit tests
       run: |
         echo "Building unit tests"
-        cd tests/unit/
-        haxe test.hxml
-        cd ../../
+        haxe tests/unit/test.hxml

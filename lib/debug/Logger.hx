@@ -3,6 +3,7 @@ package debug;
 import debug.Assert;
 import haxe.PosInfos;
 
+using debug.ansi.StyleTools;
 /**
  * Tool used to simplify the categorization of logs, and easily customize which type of logs
  * are displayed, and which throw exceptions.
@@ -55,11 +56,9 @@ abstract Logger(LoggerRaw) from LoggerRaw
     }
     
     /**
-     * Controls how each every Logger will actually log the message, this can also be set for each
-     * individual logger with:
-     * `myLogger.log = (msg, ?pos)->haxe.Log.trace('[${getTimestamp()}] $msg', pos);`
+     * Controls how each every Logger will actually log the message
      */
-    dynamic static public function globalLog(msg:String, ?pos:PosInfos)
+    dynamic static public function globalLog(msg:Any, ?pos:PosInfos)
     {
         haxe.Log.trace(msg, pos);
     }
@@ -67,16 +66,41 @@ abstract Logger(LoggerRaw) from LoggerRaw
     /**
      * Set this to make a custom log formatter, and log will use this to format it's information
      */
-    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos)
+    dynamic static public function globalFormatter(id:Null<String>, priority:Priority, msg:Any, ?pos:PosInfos):Any
     {
-        return if (id != null && priority != NONE)
-            '$id[$priority]: $msg';
+        final result =
+            if (id != null && priority != NONE)
+                '${id}[$priority]: $msg';
             else if (priority != NONE)
-            '$priority: $msg';
+                '$priority: $msg';
             else if (id != null)
-            '$id: $msg';
+                '$id: $msg';
             else
-            '$msg';
+                '$msg';
+        
+        #if logger.no_color
+        return result;
+        #else
+        return colorizeMessage(priority, result);
+        #end
+    }
+    
+    static public function colorizeMessage(priority:Priority, msg:String):String
+    {
+        return switch priority
+        {
+            case ERROR:
+                // msg.style([COLOR_FG(RED), BOLD]);
+                msg.color(RED);
+            case WARN:
+                msg.color(YELLOW);
+            case INFO:
+                msg;
+            case NONE:
+                msg.color(WHITE);
+            case VERBOSE:
+                msg.style(DIM);
+        }
     }
     
     static final list = new Map<String, LoggerRaw>();
@@ -96,15 +120,19 @@ abstract Logger(LoggerRaw) from LoggerRaw
         {
             this = (cast Logger.log: LoggerRaw);
         }
-        else if (list.exists(id))
-        {
-            // Note: do not set priority again
-            this = list[id];
-        }
         else
         {
-            this = LoggerRaw.fromLevels(id, priority, throwPriority);
-            list[id] = this;
+            final sanitizedID = LoggerTools.sanitizeID(id);
+            if (list.exists(sanitizedID))
+            {
+                // Note: do not set priority again
+                this = list[sanitizedID];
+            }
+            else
+            {
+                this = LoggerRaw.fromLevels(id, priority, throwPriority);
+                list[sanitizedID] = this;
+            }
         }
     }
     
@@ -126,7 +154,7 @@ abstract Logger(LoggerRaw) from LoggerRaw
         if (this.id == null)
             return new Logger(subID);
         
-        final fullID = '${this.id}.$subID';
+        final fullID = LoggerTools.sanitizeID('${this.id}.$subID');
         if (list.exists(fullID))
             return list[fullID];
         
@@ -177,14 +205,6 @@ private class LoggerRaw
         verbose = new LoggerPriority(this, VERBOSE);
     }
     
-    #if logger.unit_test
-    public function resetFromCompilerFlags()
-    {
-        logLevels.resetFromCompilerFlags(LOG, id);
-        throwLevels.resetFromCompilerFlags(THROW, id);
-    }
-    #end
-    
     public function destroy()
     {
         error.destroy();
@@ -193,8 +213,17 @@ private class LoggerRaw
         verbose.destroy();
     }
     
+    #if logger.unit_test
+    public function resetFromCompilerFlags()
+    {
+        logLevels.resetFromCompilerFlags(LOG, id);
+        throwLevels.resetFromCompilerFlags(THROW, id);
+    }
+    #end
+    
     public function log(msg:Any, ?pos:PosInfos)
     {
+        final isEmpty = logLevels.isEmpty();
         if (logLevels.isEmpty() == false)
             logFinal(NONE, msg, pos);
     }
@@ -393,7 +422,7 @@ abstract PriorityList(Array<Priority>) from Array<Priority>
         if (id == null)
             return fromGlobalCompilerFlag(type, backup);
         
-        final id = contextFinder.replace(id.toLowerCase(), "");
+        final id = LoggerTools.removeContext(LoggerTools.sanitizeID(id));
         
         // check if flags are cached for this id
         final key = '$id.$type';
@@ -543,4 +572,34 @@ class LoggerDefines
         return macro $a{expr};
     }
     #end
+}
+
+
+private class LoggerTools
+{
+    static final contextFinder = ~/\[(.*?)\]/g;
+    
+    /**
+     * Removes style
+     */
+    static public function sanitizeID(id:String)
+    {
+        return id.unstyle().toLowerCase();
+    }
+    
+    /**
+     * Changes "Main[Foo].Sub[Context]" to "Main.Foo.Sub.Context"
+     */
+    static public function subContext(id:String)
+    {
+        return contextFinder.replace(id, ".$1");
+    }
+    
+    /**
+     * Removes context, ex: "Main[Foo].Sub[Context]" to "Main.Sub"
+     */
+    static public function removeContext(id:String)
+    {
+        return contextFinder.replace(id, "");
+    }
 }

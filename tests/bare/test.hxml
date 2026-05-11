@@ -1,9 +1,10 @@
---class-path src
---class-path ../../lib/
+# Run from project root
+--class-path tests/bare/src
+--class-path lib
 --main Main
 -D main.log=warn
 -D alt.log=info
--D main.sub.log=warn
+-D main.sub.log=verbose
 -D dump-dependencies
 --dce full
 -D analyzer-optimize

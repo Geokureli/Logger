@@ -1,5 +1,6 @@
---class-path src
---class-path ../../lib/
+# Run from project root
+--class-path tests/unit/src
+--class-path lib
 --library utest
 -D logger.unit_test
 --main Main
