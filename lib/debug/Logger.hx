@@ -584,7 +584,7 @@ private class LoggerTools
      */
     static public function sanitizeID(id:String)
     {
-        return id.removeStyle().toLowerCase();
+        return id.unstyle().toLowerCase();
     }
     
     /**

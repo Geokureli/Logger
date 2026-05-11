@@ -2,7 +2,7 @@ package debug.ansi;
 
 class StyleTools
 {
-    overload static public inline extern function removeStyle(string:String):String
+    overload static public inline extern function unstyle(string:String):String
     {
         // #if interp
         final split = string.split("\u001b[");
