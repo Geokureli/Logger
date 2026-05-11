@@ -36,33 +36,52 @@ class StyleTools
         return applyMany(string, styles);
     }
     
-    overload static public inline extern function style(string:String, color:ColorStyle):String
+    static public inline function color(string:String, color:Color):String
     {
         return apply(string, COLOR_FG(color));
     }
     
     static function apply(string:String, style:Style):String
     {
-        final start = switch style
+        final on = getOnCode(style);
+        final off = getOffCode(style);
+        return '\u001b[${on}m${string}\u001b[${off}m';
+    }
+    
+    static function applyMany(string:String, styles:Array<Style>):String
+    {
+        final on = styles.map(getOnCode).join(";");
+        final offFor = styles.map(getOffCode);
+        offFor.reverse();
+        final off = offFor.join(";");
+        return '\u001b[${on}m${string}\u001b[${off}m';
+    }
+    
+    static function getOnCode(style:Style):String
+    {
+        return switch style
         {
-            case UNDERLINE    : AnsiCode.UNDERLINE_ON;
-            case DIM          : AnsiCode.DIM_ON;
-            case BOLD         : AnsiCode.BOLD_ON;
-            case ITALIC       : AnsiCode.ITALIC_ON;
-            case INVERSE      : AnsiCode.INVERSE_ON;
-            case CONCEAL      : AnsiCode.CONCEAL_ON;
-            case STRIKETHROUGH: AnsiCode.STRIKETHROUGH_ON;
-            case BLINK(true)  : AnsiCode.BLINK_FAST;
-            case BLINK(false) : AnsiCode.BLINK_SLOW;
+            case UNDERLINE    : AnsiCode.UNDERLINE_ON.toCode();
+            case DIM          : AnsiCode.DIM_ON.toCode();
+            case BOLD         : AnsiCode.BOLD_ON.toCode();
+            case ITALIC       : AnsiCode.ITALIC_ON.toCode();
+            case INVERSE      : AnsiCode.INVERSE_ON.toCode();
+            case CONCEAL      : AnsiCode.CONCEAL_ON.toCode();
+            case STRIKETHROUGH: AnsiCode.STRIKETHROUGH_ON.toCode();
+            case BLINK(true)  : AnsiCode.BLINK_FAST.toCode();
+            case BLINK(false) : AnsiCode.BLINK_SLOW.toCode();
             case COLOR_FG(col): AnsiCode.getForeground(col);
             case COLOR_BG(col): AnsiCode.getBackground(col);
         }
-        
-        final end = switch style
+    }
+    
+    static function getOffCode(style:Style):String
+    {
+        return (switch style
         {
             case UNDERLINE    : AnsiCode.UNDERLINE_OFF;
             case DIM          : AnsiCode.INTESITY_OFF;
-            case BOLD         : AnsiCode.BOLD_OFF;
+            case BOLD         : AnsiCode.INTESITY_OFF;
             case ITALIC       : AnsiCode.ITALIC_OFF;
             case INVERSE      : AnsiCode.INVERSE_OFF;
             case CONCEAL      : AnsiCode.CONCEAL_OFF;
@@ -70,17 +89,9 @@ class StyleTools
             case BLINK(_)     : AnsiCode.BLINK_OFF;
             case COLOR_FG(_)  : AnsiCode.FG_OFF;
             case COLOR_BG(_)  : AnsiCode.BG_OFF;
-        }
-        
-        return '${start}${string}${end}';
+        }).toCode();
     }
     
-    static function applyMany(string:String, styles:Array<Style>):String
-    {
-        for (style in styles)
-            string = apply(string, style);
-        return string;
-    }
 }
 
 enum Style
@@ -93,26 +104,8 @@ enum Style
     CONCEAL;
     STRIKETHROUGH;
     BLINK(fast:Bool);
-    COLOR_FG(color:ColorStyle);
-    COLOR_BG(color:ColorStyle);
-}
-
-enum abstract ColorStyle(Int)
-{
-    var BLACK         = 0;
-    var RED           = 1;
-    var GREEN         = 2;
-    var YELLOW        = 3;
-    var BLUE          = 4;
-    var MAGENTA       = 5;
-    var CYAN          = 6;
-    var WHITE         = 7;
-    var DEFAULT       = 9;
-    
-    function toInt()
-    {
-        return this;
-    }
+    COLOR_FG(color:Color);
+    COLOR_BG(color:Color);
 }
 
 private enum abstract AnsiCode(Int) from Int to Int
@@ -153,6 +146,7 @@ private enum abstract AnsiCode(Int) from Int to Int
     var FG_MAGENTA = 35;
     var FG_CYAN    = 36;
     var FG_WHITE   = 37;
+    var FG_CUSTOM  = 38;
     var FG_OFF     = 39;
     var BG_BLACK   = 40;
     var BG_RED     = 41;
@@ -162,6 +156,7 @@ private enum abstract AnsiCode(Int) from Int to Int
     var BG_MAGENTA = 45;
     var BG_CYAN    = 46;
     var BG_WHITE   = 47;
+    var BG_CUSTOM  = 48;
     var BG_OFF     = 49;
     var FRAME_SQUARE = 51;
     var FRAME_CIRCLE = 52;
@@ -169,21 +164,52 @@ private enum abstract AnsiCode(Int) from Int to Int
     var FRAME_OFF = 54;
     var OVERLINE_OFF = 54;
     
-    static public function getForeground(color:ColorStyle):AnsiCode
+    static final fgMap =
+        [ Color.GRAY    => FG_BLACK
+        , Color.RED     => FG_RED
+        , Color.GREEN   => FG_GREEN
+        , Color.YELLOW  => FG_YELLOW
+        , Color.BLUE    => FG_BLUE
+        , Color.MAGENTA => FG_MAGENTA
+        , Color.CYAN    => FG_CYAN
+        , Color.WHITE   => FG_WHITE
+        ];
+        
+    static final bgMap =
+        [ Color.GRAY    => BG_BLACK
+        , Color.RED     => BG_RED
+        , Color.GREEN   => BG_GREEN
+        , Color.YELLOW  => BG_YELLOW
+        , Color.BLUE    => BG_BLUE
+        , Color.MAGENTA => BG_MAGENTA
+        , Color.CYAN    => BG_CYAN
+        , Color.WHITE   => BG_WHITE
+        ];
+    
+    static public function getForeground(color:Color):String
     {
-        @:privateAccess
-        return FG_BLACK.toInt() + color.toInt();
+        if (fgMap.exists(color.to24Bit()))
+            return fgMap[color].toCode();
+        
+        return '${FG_CUSTOM.toInt()};2;${color.red};${color.green};${color.blue}';
     }
     
-    static public function getBackground(color:ColorStyle):AnsiCode
+    static public function getBackground(color:Color):String
     {
-        @:privateAccess
-        return BG_BLACK.toInt() + color.toInt();
+        if (bgMap.exists(color.to24Bit()))
+            return bgMap[color].toCode();
+        
+        return '${BG_CUSTOM.toInt()};2;${color.red};${color.green};${color.blue}';
     }
     
-    public function toString()
+    public function toAnsiString()
     {
         return '\u001b[${this}m';
+    }
+    
+    public function toCode()
+    {
+        return '${this}';
     }
     
     function toInt():Int
