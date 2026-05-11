@@ -81,22 +81,27 @@ abstract Logger(LoggerRaw) from LoggerRaw
         #if logger.no_color
         return result;
         #else
+        return colorizeMessage(priority, result);
+        #end
+    }
+    
+    static public function colorizeMessage(priority:Priority, msg:String):String
+    {
         return switch priority
         {
             case ERROR:
-                // result.style([COLOR_FG(RED), BOLD]);
-                result.style(RED);
+                // msg.style([COLOR_FG(RED), BOLD]);
+                msg.color(RED);
             case WARN:
-                result.style(YELLOW);
+                msg.color(YELLOW);
             case INFO:
-                result;
+                msg;
             case NONE:
-                result.style(WHITE);
+                msg.color(WHITE);
             case VERBOSE:
-                result.style(DIM);
+                msg.style(DIM);
         }
-        #end
-    }
+            }
     
     static final list = new Map<String, LoggerRaw>();
     
