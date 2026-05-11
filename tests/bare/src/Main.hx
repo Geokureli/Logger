@@ -8,49 +8,44 @@ class Main
     static public var altLog = new debug.Logger("Alt", INFO, ERROR); // logs warnings, throws exceptions on errors
     static public function main():Void
     {
-        log("--- Testing logs --- "); // Output: Main: test log
-        log.warn("test log"); // Output: Main: WARN:test log
-        log.info("test log"); // ignored
+        // -D main.log=warn
+        log("--- Testing logs --- "); // Output: --- Testing logs ---
+        log.warn("test log");         // Output: Main: WARN:test log
+        log.info("test log");         // Ignored via: -D main.log=warn
         log.setPriority(INFO);
-        log.info("test log"); // Main: INFO:test log
-        log.verbose("test log"); // ignored
-        log.sub("Sub").verbose("test sub log"); // ignored
-        log.sub('Sub[${"Context".style(WHITE)}]').verbose("test sub log");
+        log.info("test log");         // Main: INFO:test log
+        log.verbose("test log");      // Ignored
         log.verbose.enabled = true;
-        log.verbose("test log"); // Output: Main: VERBOSE:test log
+        log.verbose("test log");      // Output: Main: VERBOSE:test log
         try
         {
-            log.error("test log"); // throws exception
+            log.error("test log");
         }
         catch(e)
         {
             gLog('exception caught: ${e.message}'); // Output: exception caught: Main[ERROR]:test log
         }
         
-        altLog("--- Testing Alt logs --- "); // Output: Alt: test log
-        altLog.warn("test log"); // Output: Alt: WARN:test log
-        altLog.info("test log"); // ignored
-        altLog.setPriority(INFO);
-        altLog.info("test log"); // Alt: INFO:test log
-        altLog.verbose("test log"); // ignored
-        altLog.sub("Sub").verbose("test sub log"); // ignored
-        altLog.sub("Sub[Context]").verbose("test sub log"); // ignored
-        altLog.verbose.enabled = true;
-        altLog.verbose("test log"); // Output: Alt: VERBOSE:test log
+        // -D alt.log=info
+        altLog("--- Testing Alt logs --- ");                // Output: Alt: --- Testing Alt logs --- 
+        altLog.warn("test log");                            // Output: Alt: WARN:test log
+        altLog.info("test log");                            // Output: Alt[INFO]: test log
+        altLog.verbose("test log");                         // Ignored
         
-        // subs
-        log("--- Testing subs ---");
-        final logSub = log.sub("Sub[TEST]");
-        logSub.warn("test sub log");
-        logSub.info("test sub log");
-        logSub.verbose("test sub log");
-        logSub.sub("Supersup".style(GREEN)).verbose("test " + "supersub".style(RED) + " log");
+        // -D main.sub.log=verbose
+        log("--- Testing subs ---");                         // Output: Main: --- Testing subs ---
+        final logSub = log.sub("Sub"+"[CONTEXT]".color(GREEN));
+        logSub.warn("test sub log");                         // Output: Main.Sub[WARN]: test sub log
+        logSub.info("test sub log");                         // Output: Main.Sub[INFO]: test sub log
+        logSub.verbose("test sub log");                      // Output: Main.Sub[VERBOSE]: test sub log
+        logSub.sub("Supersup").verbose("test supersub log"); // Output: Main.Sub.Supersup[VERBOSE]: test supersub log
         
-        final altLogSub = altLog.sub("Sub[TEST]");
+        //-D alt.log=info
+        final altLogSub = altLog.sub('Sub[TEST]');
         altLogSub.warn("test sub log");
         altLogSub.info("test sub log");
         altLogSub.verbose("test sub log");
-        altLogSub.sub("supersup").verbose("test supersub log");
+        altLogSub.sub("Supersup").verbose("test supersub log");
         
         // asserts
         log("--- Testing asserts ---");
@@ -66,11 +61,16 @@ class Main
             gLog('Exception caught: ${e.message}'); // Output: Exception caught: Main[ERROR]: Assertion failed: 5 < 3
         }
         // set custom logger
-        log.formatter = (priority, msg, ?pos) -> 'MAIN_$priority:$msg';
+        log.formatter = function (priority, msg, ?pos) 
+        {
+            final priStr = priority == NONE ? "" : '_$priority';
+            return 'MAIN$priStr:$msg';
+        }
         log.error.throws = false;
         log.error("test log"); // Output: MAIN_ERROR:test log
         
         // Global logger (notice `import debug.Logger.log as gLog;`)
+        log("--- Testing global log ---");
         gLog("test log");
         gLog.warn("test log");
         gLog.info("test log");

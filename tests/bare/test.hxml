@@ -1,5 +1,6 @@
---class-path src
---class-path ../../lib/
+# Run from project root
+--class-path tests/bare/src
+--class-path lib
 --main Main
 -D main.log=warn
 -D alt.log=info
