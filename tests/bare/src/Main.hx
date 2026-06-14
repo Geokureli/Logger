@@ -16,6 +16,7 @@ class Main
         log.sub("sub[context]").verbose("test sub log"); // ignored
         log.verbose.enabled = true;
         log.verbose("test log"); // Output: Main: VERBOSE:test log
+        log.verbose.v(1, "a", true); // Output: Main: VERBOSE: 1, a, true
         try
         {
             log.error("test log"); // throws exception
