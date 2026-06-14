@@ -2,6 +2,7 @@ package debug;
 
 import debug.Logger;
 import haxe.PosInfos;
+import haxe.macro.Expr;
 
 @:forward(enabled, throws, assert, level)
 abstract LoggerPriority(LoggerPriorityRaw)
@@ -15,6 +16,12 @@ abstract LoggerPriority(LoggerPriorityRaw)
     inline function callPos(msg:Any, ?pos:PosInfos)
     {
         this.log(msg, pos);
+    }
+
+    /** Variadic log, allows any number of arguments but cannot specify the pos */
+    macro public function v(expr:ExprOf<Bool>, args:Array<Expr>):Expr
+    {
+        return Logger.logV(expr, args);
     }
     
     @:allow(debug.LoggerRaw)
