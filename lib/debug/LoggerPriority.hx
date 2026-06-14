@@ -18,12 +18,13 @@ abstract LoggerPriority(LoggerPriorityRaw)
     {
         this.log(msg, pos);
     }
-  	
-  	function vFormat(args:Array<Any>, delim = ", "):String
+
+    function vFormat(args:Array<Any>, delim = ", "):String
     {
         return args.map(Std.string).join(delim);
     }
-    
+
+    /** Variadic log, allows any number of arguments but cannot specify the pos */
     macro public function v(expr:ExprOf<Bool>, args:Array<Expr>):Expr
     {
         return LoggerPriorityRaw.v(expr, args);
