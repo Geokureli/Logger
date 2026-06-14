@@ -3,7 +3,6 @@ package debug;
 import debug.Logger;
 import haxe.PosInfos;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
 
 @:forward(enabled, throws, assert, level)
 abstract LoggerPriority(LoggerPriorityRaw)
@@ -19,15 +18,10 @@ abstract LoggerPriority(LoggerPriorityRaw)
         this.log(msg, pos);
     }
 
-    function vFormat(args:Array<Any>, delim = ", "):String
-    {
-        return args.map(Std.string).join(delim);
-    }
-
     /** Variadic log, allows any number of arguments but cannot specify the pos */
     macro public function v(expr:ExprOf<Bool>, args:Array<Expr>):Expr
     {
-        return LoggerPriorityRaw.v(expr, args);
+        return Logger.logV(expr, args);
     }
     
     @:allow(debug.LoggerRaw)
@@ -75,15 +69,4 @@ private class LoggerPriorityRaw
         @:privateAccess
         parent.logIf(level, msg, pos);
     }
-    
-    #if macro
-    static public function v(instance:Expr, args:Array<Expr>):Expr
-    {
-        return macro
-        {
-            @:pos(instance.pos)
-            $instance(@:privateAccess $instance.vFormat([$a{args}]));
-        };
-    }
-    #end
 }
