@@ -2,6 +2,7 @@ package debug;
 
 import debug.Assert;
 import haxe.PosInfos;
+import haxe.macro.Expr;
 
 /**
  * Tool used to simplify the categorization of logs, and easily customize which type of logs
@@ -113,6 +114,12 @@ abstract Logger(LoggerRaw) from LoggerRaw
     {
         this.log(msg, pos);
     }
+
+    /** Variadic log, allows any number of arguments but cannot specify the pos */
+    macro public function v(expr:Expr, args:Array<Expr>):Expr
+    {
+        return Logger.logV(expr, args);
+    }
     
     /**
      * Creates a sub-category of this category, capable of having its own priorities.
@@ -132,6 +139,26 @@ abstract Logger(LoggerRaw) from LoggerRaw
         
         return list[fullID] = LoggerRaw.fromParent(subID, this);
     }
+    
+    /**
+     * Easy way to combine various args into a single string
+     */
+    static public function vFormat(args:Array<Any>, delim = ", "):String
+    {
+        return args.map(Std.string).join(delim);
+    }
+    
+    #if macro
+    /** Used by variadic log.v methods to make a single arg log with posInfos */
+    static public function logV(instance:Expr, args:Array<Expr>):Expr
+    {
+        return macro
+        {
+            @:pos(instance.pos)
+            $instance(debug.Logger.vFormat([$a{args}]));
+        };
+    }
+    #end
 }
 
 @:allow(debug.Logger)
